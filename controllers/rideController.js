@@ -9,7 +9,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 // Request a ride
-router.post('/request', async (req, res) => {
+router.post('/request-ride', async (req, res) => {
     try {
         const { userId, pickupLocation, dropoffLocation } = req.body;
         const newRide = new Ride({
