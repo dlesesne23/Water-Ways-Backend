@@ -2,8 +2,7 @@ require('dotenv').config();
 const router = require('express').Router();
 // Axios takes the response from external API and stores data it in 
 // const axios = require("axios")
-// Database models
-const db = require('../models');
+const Ride = require('../models/Ride'); 
 // For hashing passwords
 const bcrypt = require('bcrypt');
 // For creating and verifying JSON Web Tokens (JWT)
