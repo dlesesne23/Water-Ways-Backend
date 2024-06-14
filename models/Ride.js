@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 
 const rideSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  driver: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver' },
   pickupLocation: {
     type: { type: String, default: 'Point' },
     coordinates: [Number],
