@@ -13,4 +13,6 @@ db.on("connected", function() {
 
 module.exports = {
     User: require("./User"),
+    Driver: require("./Driver"),
+    Ride: require("./Ride"),
 }

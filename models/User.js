@@ -6,7 +6,10 @@ const userSchema = new mongoose.Schema({
     username: {type: String, required: true, unique: true},
     email: {type: String, required: true, unique: true},
     password: {type: String, required: true},
-    driver: {type: Boolean},
+    location: {
+        type: { type: String, default: 'Point' },
+        coordinates: [Number],
+      },
 }, {
     timestamps: true,
     toJSON: {
@@ -16,6 +19,8 @@ const userSchema = new mongoose.Schema({
         }
     }
 });
+
+userSchema.index({ location: '2dsphere' });
 
 userSchema.methods.generateAuthToken = async function(){
     const token = jwt.sign({_id: this._id, name: this.name}, process.env.JWT_SECRETKEY)

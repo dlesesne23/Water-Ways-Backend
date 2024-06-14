@@ -11,7 +11,7 @@ const jwt = require('jsonwebtoken');
 
 
 // SIGNUP
-router.post('/signup', async (req, res) => {
+router.post('/signup/user', async (req, res) => {
     try {
       const { username, email, password } = req.body;
       // Check if user already exists
@@ -37,12 +37,39 @@ router.post('/signup', async (req, res) => {
     }
   });
 
+  router.post('/signup/driver', async (req, res) => {
+    try {
+      const { username, email, password, license } = req.body;
+      // Check if user already exists
+      const existingDriver = await db.Driver.findOne({ username });
+      if (existingDriver) {
+        return res.status(409).json({ msg: `Username ${username} already exists. Please sign in.`});
+      }
+      // Create a new user with the hashed password
+      const newDriver = new db.Driver({
+        username: username,
+        email: email,
+        password: password,
+        license: license,
+      });
+      // Save the new user
+      await newDriver.save();
+      driver = newDriver
+      // Create a token for the new user
+      const token = createToken(newDriver);
+      res.json({ token, user: newDriver });
+    } catch (error) {
+      console.log("Signup Error:", error.message)
+      res.status(400).json({ msg: error.message });
+    }
+  });
+
   // SIGNIN
 // Receive credentials from user
 // Verify credentials are accurate
 // If credentials are accurate, then return a token
 
-router.post('/signin', async (req, res) => {
+router.post('/signin/user', async (req, res) => {
     try {
       console.log("Attempting to sign in with:", req.body); 
       const { username, password } = req.body
@@ -50,17 +77,36 @@ router.post('/signin', async (req, res) => {
       if (!foundUser) throw new Error(`No user found with username ${username}`)
       const validPassword = await bcrypt.compare(password, foundUser.password)
       if (!validPassword) throw new Error(`The password credentials shared did not match the credentials for the user with username ${username}`)
-      const token = createToken(foundUser)
+      const token = createToken(user._id, "foundUser")
     user = foundUser
-      res.json({ token, user: foundUser })
+      res.json({ token })
+    } catch (error) {
+      res.status(400).json({ msg: error.message })
+    }
+  })
+
+  router.post('/signin/driver', async (req, res) => {
+    try {
+      console.log("Attempting to sign in with:", req.body); 
+      const { username, password } = req.body
+      const foundDriver = await db.Driver.findOne({ username })
+      if (!foundDriver) throw new Error(`No user found with username ${username}`)
+      const validPassword = await bcrypt.compare(password, foundDriver.password)
+      if (!validPassword) throw new Error(`The password credentials shared did not match the credentials for the user with username ${username}`)
+      const token = createToken(driver._id, "foundDriver")
+    driver = foundDriver
+      res.json({ token })
     } catch (error) {
       res.status(400).json({ msg: error.message })
     }
   })
 
   // Create token form
-function createToken(user) {
-    return jwt.sign({ user }, process.env.SECRETKEY, { expiresIn: '24h' })
+  function createToken(id, role) {
+    const payload = { id, role };
+    const options = { expiresIn: '1h' };
+    const token = jwt.sign(payload, process.env.SECRETKEY, options);
+    return token;
   }
 
 // Verify a token
