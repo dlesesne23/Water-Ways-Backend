@@ -11,9 +11,9 @@ const jwt = require('jsonwebtoken');
 // Request a ride
 router.post('/request', async (req, res) => {
     try {
-        const { userId, pickupLocation, dropoffLocation } = req.body;
+        const { _id, pickupLocation, dropoffLocation } = req.body;
         const newRide = new Ride({
-          user: userId,
+          user: _id,
           pickupLocation: {
             type: 'Point',
             coordinates: [pickupLocation.longitude, pickupLocation.latitude],
