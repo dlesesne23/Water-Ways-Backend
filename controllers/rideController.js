@@ -10,71 +10,42 @@ const jwt = require('jsonwebtoken');
 
 // Request a ride
 router.post('/request', async (req, res) => {
-  try {
-    const { userId, pickupLocation, dropoffLocation } = req.body;
-    const ride = new Ride({
-      user: userId,
-      pickupLocation: { type: 'Point', coordinates: pickupLocation },
-      dropoffLocation: { type: 'Point', coordinates: dropoffLocation },
-    });
-    await ride.save();
+    try {
+        const { userId, pickupLocation, dropoffLocation } = req.body;
+        const newRide = new Ride({
+          user: userId,
+          pickupLocation: {
+            type: 'Point',
+            coordinates: [pickupLocation.longitude, pickupLocation.latitude],
+          },
+          dropoffLocation: {
+            type: 'Point',
+            coordinates: [dropoffLocation.longitude, dropoffLocation.latitude],
+          },
+          status: 'pending',
+        });
     
-    // Notify nearby drivers
-    // (Logic to find and notify nearby drivers)
+        await newRide.save();
+        res.status(201).send('Ride requested successfully');
+      } catch (error) {
+        res.status(500).send('Error requesting ride');
+        console.error(error);
+      }
+    })
+    function checkToken(req, res, next) {
+        let token = req.get('Authorization')
+        if (token) {
+          token = token.split(' ')[1]
+          jwt.verify(token, process.env.SECRET, (err, decoded) => {
+            req.user = err ? null : decoded.user
+            req.exp = err ? null : new Date(decoded.exp * 1000)
+          })
+          return next()
+        } else {
+          req.user = null
+          return next()
+        }
+      };
 
-    res.status(201).json(ride);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Accept a ride
-router.post('/accept/:rideId', async (req, res) => {
-  try {
-    const { rideId } = req.params;
-    const { driverId } = req.body;
-
-    const ride = await Ride.findById(rideId);
-    if (!ride) return res.status(404).json({ error: 'Ride not found' });
-
-    const driver = await Driver.findById(driverId);
-    if (!driver) return res.status(404).json({ error: 'Driver not found' });
-
-    ride.driver = driverId;
-    ride.status = 'accepted';
-    await ride.save();
-
-    driver.isAvailable = false;
-    await driver.save();
-
-    // Notify user that their ride has been accepted
-    // (Socket.io logic)
-
-    res.status(200).json(ride);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Complete a ride
-router.post('/complete/:rideId', async (req, res) => {
-  try {
-    const { rideId } = req.params;
-
-    const ride = await Ride.findById(rideId);
-    if (!ride) return res.status(404).json({ error: 'Ride not found' });
-
-    ride.status = 'completed';
-    await ride.save();
-
-    const driver = await Driver.findById(ride.driver);
-    driver.isAvailable = true;
-    await driver.save();
-
-    res.status(200).json(ride);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 module.exports = router;
